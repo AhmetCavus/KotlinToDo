@@ -1,0 +1,59 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId "com.ams.cavus.todo"
+        minSdkVersion 23
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    dataBinding {
+        enabled true
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation"org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    implementation "com.android.support:appcompat-v7:$support_version"
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+
+    // Dagger dependencies
+    implementation "com.google.dagger:dagger:$dagger_version"
+    kapt "com.google.dagger:dagger-compiler:$dagger_version"
+    compileOnly "javax.annotation:jsr250-api:$apt_version"
+    implementation 'javax.inject:javax.inject:1'
+
+    // Azure
+    // implementation 'com.microsoft.azure:azure-notifications-handler:1.0.1'
+    implementation 'com.microsoft.azure:azure-mobile-android:3.1.0@aar'
+
+    // Request Libraries
+    implementation 'com.squareup.okhttp:okhttp:2.5.0'
+
+    // Android Arch
+    implementation "android.arch.lifecycle:viewmodel:$archLifecycleVersion"
+    implementation "android.arch.lifecycle:livedata:$archLifecycleVersion"
+    annotationProcessor "android.arch.lifecycle:compiler:$archLifecycleVersion"
+
+    // Test dependencies
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    // Dependency for Google Sign-In
+    implementation 'com.google.code.gson:gson:2.8.4'
+    implementation 'com.google.android.gms:play-services-auth:15.0.1'
+}
