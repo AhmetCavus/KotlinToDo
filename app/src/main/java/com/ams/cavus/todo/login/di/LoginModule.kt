@@ -1,5 +1,6 @@
 package com.ams.cavus.todo.login.di
 
+import com.ams.cavus.todo.R
 import com.ams.cavus.todo.base.App
 import com.ams.cavus.todo.login.model.LoginDataModel
 import com.ams.cavus.todo.login.viewmodel.LoginViewModel
@@ -8,6 +9,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -25,14 +27,23 @@ class LoginModule {
     @Singleton
     @Provides
     fun provideGoogleClient(app: App): GoogleSignInClient{
+        val clientId = app.getString(R.string.google_server_client_id)
         // Configure sign-in to request the user's ID, email address, and basic
         // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        val gso =
+                GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestId()
                 .requestEmail()
+                .requestProfile()
+                .requestIdToken(clientId)
+                .requestServerAuthCode(clientId)
                 .build()
-
         // Build a GoogleSignInClient with the options specified by gso.
         return GoogleSignIn.getClient(app.applicationContext, gso)
     }
+
+    @Named("azureScope")
+    @Provides
+    fun provideAzureScope(app: App): String = app.getString(R.string.azure_scope)
 
 }

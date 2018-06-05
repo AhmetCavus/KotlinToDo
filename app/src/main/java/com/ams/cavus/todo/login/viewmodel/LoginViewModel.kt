@@ -1,26 +1,35 @@
 package com.ams.cavus.todo.login.viewmodel
 
-import android.app.Activity
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Intent
-import android.widget.Toast
+import com.ams.cavus.todo.R
+import com.ams.cavus.todo.client.AzureCredentials
+import com.ams.cavus.todo.db.AppDb
+import com.ams.cavus.todo.db.entity.CredentialsData
 import com.ams.cavus.todo.login.model.LoginDataModel
 import com.example.amstodo.util.SingleLiveEvent
+import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
-import com.microsoft.windowsazure.mobileservices.authentication.LoginManager
+import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider
+import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceUser
+import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.doAsyncResult
+import org.jetbrains.anko.uiThread
 import javax.inject.Inject
 
-class LoginViewModel(app: Application) : AndroidViewModel(app), LifecycleObserver {
+class LoginViewModel (private val app: Application) : AndroidViewModel(app), LifecycleObserver {
 
     @Inject
     lateinit var azureClient: MobileServiceClient
@@ -31,40 +40,39 @@ class LoginViewModel(app: Application) : AndroidViewModel(app), LifecycleObserve
     @Inject
     lateinit var model: LoginDataModel
 
-    val openTaskEvent = SingleLiveEvent<Intent>()
+    @Inject
+    lateinit var gson: Gson
 
-    val loginManager: LoginManager by lazy {
-        LoginManager(azureClient)
-    }
+    @Inject
+    lateinit var appDb: AppDb
+
+    val startActivityEvent = SingleLiveEvent<Intent>()
 
     init {
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun onResume() {
-    }
-
-    fun onLogin() {
-
-        val account = GoogleSignIn.getLastSignedInAccount(getApplication())
-        if(account != null) {
-            googleClient
-                .signOut()
-                .addOnCompleteListener(azureClient.context as Activity, OnCompleteListener<Void> {
-                    model.isInProgress = true
-                    val googleClient = googleClient.signInIntent
-                    openTaskEvent.value = googleClient
-                })
-        } else {
-            model.isInProgress = true
-            val googleClient = googleClient.signInIntent
-            openTaskEvent.value = googleClient
+        doAsync {
+            val credentials = appDb.credentialsDataDao().selectLastAccount()
+            if(azureClient.currentUser != null) {
+                uiThread { updateUI(credentials) }
+            } else {
+                if(credentials == null) {
+                    uiThread { updateUI(null) }
+                } else {
+                    val oauthToken = gson.toJson(credentials)
+                    val authTask = azureClient.login(MobileServiceAuthenticationProvider.Google.name, oauthToken)
+                    // Signed in successfully, show authenticated UI.
+                    authTask.doAsyncResult {
+                        if(!authTask.isDone) return@doAsyncResult
+                        val user = authTask.get()
+                        print(user)
+                        uiThread { updateUI(credentials) }
+                    }
+                }
+            }
         }
-
-//        loginManager.authenticate(MobileServiceAuthenticationProvider.Google.name, client.context,
-//                UserAuthenticationCallback { user, exception, response ->
-//                    print(user.userId)
-//                })
     }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -75,18 +83,77 @@ class LoginViewModel(app: Application) : AndroidViewModel(app), LifecycleObserve
         handleSignInResult(task)
     }
 
-    // [START handleSignInResult]
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
-            val account = completedTask.getResult(ApiException::class.java)
-            Toast.makeText(getApplication(), account.email, Toast.LENGTH_SHORT).show()
-            // Signed in successfully, show authenticated UI.
+//            val account = completedTask.getResult(ApiException::class.java)
+            val signInAccount = GoogleSignIn.getLastSignedInAccount(app)
+            doAsync {
+                val accessToken = GoogleAuthUtil.getToken(app.applicationContext, signInAccount?.account, app.getString(R.string.azure_scope))
+                val oauthToken = gson.toJson(AzureCredentials(accessToken, signInAccount?.idToken ?: ""))
+                val authTask = azureClient.login(MobileServiceAuthenticationProvider.Google.name, oauthToken)
+                // Signed in successfully, show authenticated UI.
+                authTask.doAsyncResult {
+//                    if(!authTask.isDone) return@doAsyncResult
+                    val user = authTask.get()
+                    val credentials =
+                            CredentialsData(
+                                    0,
+                                    user.authenticationToken,
+                                    user.userId,
+                                    signInAccount?.email ?: "",
+                                    accessToken,
+                                    signInAccount?.idToken ?: ""
+                            )
+                    appDb.credentialsDataDao().insert(credentials)
+                    uiThread { updateUI(credentials) }
+                }
+            }
         } catch (e: ApiException) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            Toast.makeText(getApplication(), e.message, Toast.LENGTH_SHORT).show()
+            updateUI(null)
         }
+    }
 
+    fun signIn() {
+        val signInIntent = googleClient.signInIntent
+        googleClient.revokeAccess()
+        startActivityEvent.value = signInIntent
+    }
+
+    fun signInToAzure(credentials: CredentialsData) {
+
+    }
+
+    fun signOut() {
+        googleClient.signOut()
+            .addOnCompleteListener {
+                updateUI(null)
+            }
+    }
+
+    fun revokeAccess() {
+        googleClient.revokeAccess()
+            .addOnCompleteListener {
+                updateUI(null)
+            }
+    }
+
+    private fun updateUI(credentials: CredentialsData?) {
+        val context = app.baseContext
+        if (credentials != null) {
+            model.apply {
+                statusText = context.getString(R.string.signed_in_fmt, credentials.email)
+                isSignInVisible = false
+                isSignOutVisible = true
+            }
+        } else {
+            model.apply {
+                statusText = context.getString(R.string.signed_out)
+                isSignInVisible = true
+                isSignOutVisible = false
+            }
+        }
     }
 
 }

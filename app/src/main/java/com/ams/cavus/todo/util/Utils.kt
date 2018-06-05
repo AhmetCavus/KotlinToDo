@@ -1,10 +1,7 @@
-@file:Suppress("unused")
-
-package com.ams.cavus.util
+package com.ams.cavus.todo.util
 
 import android.app.Activity
 import android.content.Context
-import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
 import android.view.LayoutInflater
 import android.view.View
@@ -19,8 +16,6 @@ fun Context.toast(message: String, length: Int = Toast.LENGTH_SHORT) {
 fun ViewGroup.inflate(@LayoutRes layoutRes: Int, attachToRoot: Boolean = false): View {
     return LayoutInflater.from(context).inflate(layoutRes, this, attachToRoot)
 }
-
-inline fun <reified T : View> View.find(@IdRes idRes: Int): T = findViewById(idRes) as T
 
 fun View.show() = run { visibility = View.VISIBLE }
 fun View.hide() = run { visibility = View.GONE }

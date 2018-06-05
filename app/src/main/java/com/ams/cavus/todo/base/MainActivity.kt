@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.ActionMode
 import android.view.View
 import android.widget.TextView
 import com.ams.cavus.todo.R
@@ -41,8 +42,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         // [START configure_signin]
         // Configure sign-in to request the user's ID, email address, and basic
         // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
+        val clientId = getString(R.string.google_server_client_id)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestId()
                 .requestEmail()
+                .requestProfile()
+                .requestIdToken(clientId)
+                .requestServerAuthCode(clientId)
                 .build()
         // [END configure_signin]
 
@@ -60,6 +66,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val defaultKey = KeyStore.getDefaultType()
         val keystore = KeyStore.getInstance(defaultKey)
         print(keystore.provider)
+    }
+
+    override fun onActionModeStarted(mode: ActionMode?) {
+        super.onActionModeStarted(mode)
     }
 
     public override fun onStart() {
@@ -91,6 +101,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
+//            val account = GoogleSignIn.getLastSignedInAccount(this)
+
+            print(account.idToken)
+            print(account.serverAuthCode)
 
             // Signed in successfully, show authenticated UI.
             updateUI(account)

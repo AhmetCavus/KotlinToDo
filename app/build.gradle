@@ -24,6 +24,8 @@ android {
     }
 }
 
+kapt { generateStubs = true }
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
@@ -39,6 +41,12 @@ dependencies {
     // Azure
     // implementation 'com.microsoft.azure:azure-notifications-handler:1.0.1'
     implementation 'com.microsoft.azure:azure-mobile-android:3.1.0@aar'
+    implementation "com.google.guava:guava:$guavaVersion"
+
+    // Anko
+    implementation "org.jetbrains.anko:anko-sdk15-coroutines:$anko_version"
+    implementation "org.jetbrains.anko:anko-appcompat-v7-coroutines:$anko_version"
+    implementation "org.jetbrains.anko:anko-design-coroutines:$anko_version"
 
     // Request Libraries
     implementation 'com.squareup.okhttp:okhttp:2.5.0'
@@ -56,4 +64,8 @@ dependencies {
     // Dependency for Google Sign-In
     implementation 'com.google.code.gson:gson:2.8.4'
     implementation 'com.google.android.gms:play-services-auth:15.0.1'
+
+    // Room Persistence API
+    implementation "android.arch.persistence.room:runtime:1.0.0"
+    kapt "android.arch.persistence.room:compiler:1.0.0"
 }
