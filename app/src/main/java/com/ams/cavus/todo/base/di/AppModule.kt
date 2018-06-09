@@ -2,14 +2,18 @@ package com.ams.cavus.todo.base.di
 
 import android.arch.persistence.room.Room
 import com.ams.cavus.client.AzureApi
+import com.ams.cavus.todo.R
 import com.ams.cavus.todo.base.App
+import com.ams.cavus.todo.client.AzureService
 import com.ams.cavus.todo.db.AppDb
+import com.ams.cavus.todo.db.DbService
 import com.google.gson.Gson
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import com.squareup.okhttp.OkHttpClient
 import dagger.Module
 import dagger.Provides
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -37,21 +41,27 @@ class AppModule(val app: App) {
 
     @Singleton
     @Provides
-    fun provideGson() = Gson()
+    fun provideAzureService(client: MobileServiceClient, gson: Gson) : AzureService = AzureService(client, gson)
 
     @Singleton
     @Provides
     fun provideAppDb(app: App) =
             Room.databaseBuilder(
-                app.applicationContext,
-                AppDb::class.java,
-                "amstodo.db"
+                    app.applicationContext,
+                    AppDb::class.java,
+                    "amstodo.db"
             )
-            .fallbackToDestructiveMigration()
-            .build()
+                    .fallbackToDestructiveMigration()
+                    .build()
+    @Singleton
+    @Provides
+    fun provideDbService(appDb: AppDb) = DbService(appDb)
 
-//    @Singleton
-//    @Provides
-//    fun provideMobileServiceTable(client: MobileServiceClient): MobileServiceTable<ToDoItem>
-//            =  client.getTable(ToDoItem::class.java)
+    @Singleton
+    @Provides
+    fun provideGson() = Gson()
+
+    @Named("azureScope")
+    @Provides
+    fun provideAzureScope(app: App): String = app.getString(R.string.azure_scope)
 }

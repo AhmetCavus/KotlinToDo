@@ -10,13 +10,13 @@ import com.ams.cavus.todo.db.entity.CredentialsData
 interface CredentialsDataDao {
 
     @Query("SELECT * from CredentialsData")
-    fun getAll(): List<CredentialsData>
+    fun getAll(): List<CredentialsData>?
 
     @Query("SELECT * from CredentialsData where email = :email")
-    fun selectAccount(email: String): CredentialsData
+    fun selectAccount(email: String): CredentialsData?
 
     @Query("SELECT * from CredentialsData limit 1")
-    fun selectLastAccount(): CredentialsData
+    fun selectLastAccount(): CredentialsData?
 
     @Insert(onConflict = REPLACE)
     fun insert(credentialsData: CredentialsData)

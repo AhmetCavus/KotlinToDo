@@ -7,6 +7,10 @@
         <import type="android.view.View" />
 
         <variable
+            name="provider"
+            type="com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider" />
+
+        <variable
             name="vm"
             type="com.ams.cavus.todo.login.viewmodel.LoginViewModel" />
 
@@ -94,7 +98,7 @@
                 tools:visibility="gone"
                 android:clickable="true"
                 app:visibleIf="@{vm.model.isSignInVisible}"
-                app:onClick="@{v -> vm.signIn()}"
+                app:onClick="@{v -> vm.signIn(provider.Google)}"
                 />
 
             <LinearLayout
@@ -118,14 +122,6 @@
                     android:onClick="@{v -> vm.signOut()}"
                     />
 
-                <Button
-                    android:id="@+id/disconnect_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/disconnect"
-                    android:theme="@style/ThemeOverlay.MyDarkButton"
-                    android:onClick="@{() -> vm.revokeAccess()}" />
             </LinearLayout>
 
         </RelativeLayout>

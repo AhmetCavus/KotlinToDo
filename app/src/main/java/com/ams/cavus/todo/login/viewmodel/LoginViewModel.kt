@@ -6,154 +6,125 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Intent
-import com.ams.cavus.todo.R
+import com.ams.cavus.todo.list.TodoActivity
 import com.ams.cavus.todo.client.AzureCredentials
-import com.ams.cavus.todo.db.AppDb
-import com.ams.cavus.todo.db.entity.CredentialsData
+import com.ams.cavus.todo.client.AzureService
+import com.ams.cavus.todo.client.GoogleService
+import com.ams.cavus.todo.db.DbService
 import com.ams.cavus.todo.login.model.LoginDataModel
 import com.example.amstodo.util.SingleLiveEvent
-import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Task
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
-import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider
-import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceUser
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.doAsyncResult
-import org.jetbrains.anko.uiThread
 import javax.inject.Inject
 
-class LoginViewModel (private val app: Application) : AndroidViewModel(app), LifecycleObserver {
+class LoginViewModel (private val app: Application) : AndroidViewModel(app), LifecycleObserver{
+
+    companion object {
+        const val GOOGLE_CALLBACK = 101
+        const val MICROSOFT_CALLBACK = 102
+        const val AD_CALLBACK = 103
+    }
 
     @Inject
-    lateinit var azureClient: MobileServiceClient
+    lateinit var azureService: AzureService
 
     @Inject
-    lateinit var googleClient: GoogleSignInClient
+    lateinit var googleService: GoogleService
 
     @Inject
     lateinit var model: LoginDataModel
 
     @Inject
-    lateinit var gson: Gson
+    lateinit var dbService: DbService
 
-    @Inject
-    lateinit var appDb: AppDb
+    var currentCallbackId = 0
 
+    val startActivityForResultEvent = SingleLiveEvent<Intent>()
     val startActivityEvent = SingleLiveEvent<Intent>()
 
-    init {
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    fun onCreate() {
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun onResume() {
-        doAsync {
-            val credentials = appDb.credentialsDataDao().selectLastAccount()
-            if(azureClient.currentUser != null) {
-                uiThread { updateUI(credentials) }
-            } else {
-                if(credentials == null) {
-                    uiThread { updateUI(null) }
-                } else {
-                    val oauthToken = gson.toJson(credentials)
-                    val authTask = azureClient.login(MobileServiceAuthenticationProvider.Google.name, oauthToken)
-                    // Signed in successfully, show authenticated UI.
-                    authTask.doAsyncResult {
-                        if(!authTask.isDone) return@doAsyncResult
-                        val user = authTask.get()
-                        print(user)
-                        uiThread { updateUI(credentials) }
-                    }
-                }
-            }
-        }
+        relogin()
     }
 
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    private fun relogin() {
+        dbService.fetchLastAccount(
+                { credentials ->
+                    azureService.login(
+                            credentials.toAzure(),
+                            ::onLoginSuccess,
+                            ::onLoginFail
+                    )
+                },
+                { exception ->  updateUI(exception)}
+        )
+    }
+
+    fun handleGoogleResult(requestCode: Int, resultCode: Int, data: Intent?) {
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         // The Task returned from this call is always completed, no need to attach
         // a listener.
-        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-        handleSignInResult(task)
-    }
-
-    private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
+        val completedTask = GoogleSignIn.getSignedInAccountFromIntent(data)
         try {
-//            val account = completedTask.getResult(ApiException::class.java)
-            val signInAccount = GoogleSignIn.getLastSignedInAccount(app)
-            doAsync {
-                val accessToken = GoogleAuthUtil.getToken(app.applicationContext, signInAccount?.account, app.getString(R.string.azure_scope))
-                val oauthToken = gson.toJson(AzureCredentials(accessToken, signInAccount?.idToken ?: ""))
-                val authTask = azureClient.login(MobileServiceAuthenticationProvider.Google.name, oauthToken)
-                // Signed in successfully, show authenticated UI.
-                authTask.doAsyncResult {
-//                    if(!authTask.isDone) return@doAsyncResult
-                    val user = authTask.get()
-                    val credentials =
-                            CredentialsData(
-                                    0,
-                                    user.authenticationToken,
-                                    user.userId,
-                                    signInAccount?.email ?: "",
-                                    accessToken,
-                                    signInAccount?.idToken ?: ""
-                            )
-                    appDb.credentialsDataDao().insert(credentials)
-                    uiThread { updateUI(credentials) }
-                }
+            val account = completedTask.getResult(ApiException::class.java)
+            googleService.loadCredentials(app, account) {
+                credentials ->
+                    azureService.login(
+                            "Google",
+                            credentials,
+                            { user -> showTodoList()},
+                            { exception -> updateUI(exception)}
+                    )
             }
         } catch (e: ApiException) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            updateUI(null)
+            updateUI(e)
         }
     }
 
-    fun signIn() {
-        val signInIntent = googleClient.signInIntent
-        googleClient.revokeAccess()
-        startActivityEvent.value = signInIntent
+    fun handleMicrosoftResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        TODO("Handle Microsoft result")
     }
 
-    fun signInToAzure(credentials: CredentialsData) {
+    fun handleAdResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        TODO("Handle Active Directory result")
+    }
 
+    fun signIn(provider: MobileServiceAuthenticationProvider): Unit = when(provider) {
+        MobileServiceAuthenticationProvider.MicrosoftAccount -> TODO()
+        MobileServiceAuthenticationProvider.Google -> {
+            currentCallbackId = GOOGLE_CALLBACK
+            startActivityForResultEvent.value = googleService.createSignInIntent()
+        }
+        MobileServiceAuthenticationProvider.Twitter -> TODO()
+        MobileServiceAuthenticationProvider.Facebook -> TODO()
+        MobileServiceAuthenticationProvider.WindowsAzureActiveDirectory -> TODO()
+        else -> TODO()
     }
 
     fun signOut() {
-        googleClient.signOut()
-            .addOnCompleteListener {
-                updateUI(null)
-            }
+        azureService.logout(
+            { loggedOutUser -> showTodoList()},
+            { exception -> updateUI(exception) }
+        )
     }
 
-    fun revokeAccess() {
-        googleClient.revokeAccess()
-            .addOnCompleteListener {
-                updateUI(null)
-            }
+    private fun showTodoList() {
+        val todoListIntent = Intent(app, TodoActivity::class.java)
+        startActivityEvent.value = todoListIntent
     }
 
-    private fun updateUI(credentials: CredentialsData?) {
-        val context = app.baseContext
-        if (credentials != null) {
-            model.apply {
-                statusText = context.getString(R.string.signed_in_fmt, credentials.email)
-                isSignInVisible = false
-                isSignOutVisible = true
-            }
-        } else {
-            model.apply {
-                statusText = context.getString(R.string.signed_out)
-                isSignInVisible = true
-                isSignOutVisible = false
-            }
-        }
+    private fun updateUI(error: Exception?) {
+        model.statusText = error?.message ?: ""
     }
+
+    private fun onLoginSuccess(credentials: AzureCredentials?) = showTodoList()
+    private fun onLoginFail(exception: Exception?) = updateUI(exception)
 
 }

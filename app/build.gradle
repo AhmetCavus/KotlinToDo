@@ -30,6 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
     implementation "com.android.support:appcompat-v7:$support_version"
+    implementation "com.android.support:design:$support_version"
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
 
     // Dagger dependencies
@@ -40,7 +41,7 @@ dependencies {
 
     // Azure
     // implementation 'com.microsoft.azure:azure-notifications-handler:1.0.1'
-    implementation 'com.microsoft.azure:azure-mobile-android:3.1.0@aar'
+    implementation 'com.microsoft.azure:azure-mobile-android:3.4.0@aar'
     implementation "com.google.guava:guava:$guavaVersion"
 
     // Anko

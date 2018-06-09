@@ -3,6 +3,7 @@ package com.ams.cavus.todo.login
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.LifecycleRegistry
+import android.arch.lifecycle.Observer
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.os.Bundle
@@ -19,13 +20,9 @@ import javax.inject.Inject
  */
 class LoginActivity : AppCompatActivity(), LifecycleOwner {
 
-    companion object {
-        const val GOOGLE_CALLBACK = 101
-    }
-
     private val lifecycleRegistry = LifecycleRegistry(this)
 
-    lateinit var viewDataBinding: ActivityLoginBinding
+    private lateinit var viewDataBinding: ActivityLoginBinding
 
     @Inject
     lateinit var viewModel: LoginViewModel
@@ -45,9 +42,8 @@ class LoginActivity : AppCompatActivity(), LifecycleOwner {
         client.context = this
 
         viewDataBinding.vm = viewModel.apply {
-            startActivityEvent.observe(this@LoginActivity, android.arch.lifecycle.Observer {
-                startActivityForResult(it, LoginActivity.GOOGLE_CALLBACK)
-            })
+            startActivityForResultEvent.observe(this@LoginActivity, Observer(::onStartActivityForResult))
+            startActivityEvent.observe(this@LoginActivity, Observer(::onStartActivity))
             lifecycleRegistry.addObserver(this)
         }
         lifecycleRegistry.markState(Lifecycle.State.CREATED)
@@ -65,11 +61,19 @@ class LoginActivity : AppCompatActivity(), LifecycleOwner {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == LoginActivity.GOOGLE_CALLBACK) {
-            viewModel.handleActivityResult(requestCode, resultCode, intent)
+        when (requestCode) {
+            LoginViewModel.GOOGLE_CALLBACK -> viewModel.handleGoogleResult(requestCode, resultCode, data)
+            LoginViewModel.MICROSOFT_CALLBACK -> viewModel.handleMicrosoftResult(requestCode, resultCode, data)
+            LoginViewModel.AD_CALLBACK -> viewModel.handleAdResult(requestCode, resultCode, data)
         }
     }
 
+    private fun onStartActivityForResult(intent: Intent?) {
+        startActivityForResult(intent, viewModel.currentCallbackId)
+    }
 
+    private fun onStartActivity(intent: Intent?) {
+        startActivity(intent)
+    }
 
 }
