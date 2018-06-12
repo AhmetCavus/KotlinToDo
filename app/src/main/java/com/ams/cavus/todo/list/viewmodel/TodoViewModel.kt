@@ -7,7 +7,6 @@ import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import com.ams.cavus.todo.client.AzureService
 import com.ams.cavus.todo.list.TodoListAdapter
-import com.ams.cavus.todo.list.model.ToDoItem
 import javax.inject.Inject
 
 class TodoViewModel (private val app: Application) : AndroidViewModel(app), LifecycleObserver{
@@ -27,7 +26,7 @@ class TodoViewModel (private val app: Application) : AndroidViewModel(app), Life
 
 
     var count = 0
-    fun onShowAddItemPopup() {
+    fun onAddItem() {
         count+= 1
         azureService.addTodo("Text $count") { todoItem ->
             adapter.notifyDataSetChanged()

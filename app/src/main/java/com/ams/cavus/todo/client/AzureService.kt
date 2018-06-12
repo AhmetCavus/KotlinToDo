@@ -1,6 +1,5 @@
 package com.ams.cavus.todo.client
 
-import android.bluetooth.BluetoothClass
 import android.content.Intent
 import com.ams.cavus.client.AzureApi
 import com.ams.cavus.todo.helper.Settings

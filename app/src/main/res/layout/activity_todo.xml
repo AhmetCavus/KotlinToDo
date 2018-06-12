@@ -83,7 +83,7 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:src="@drawable/ic_add"
-            android:onClick="@{v -> vm.onShowAddItemPopup()}"
+            android:onClick="@{v -> vm.onAddItem()}"
             app:layout_constraintBottom_toBottomOf="@+id/main_layout"
             app:layout_constraintEnd_toEndOf="@+id/main_layout" />
 
