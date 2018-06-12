@@ -4,11 +4,10 @@ package com.ams.cavus.todo.list.model
  * Represents an item in a ToDo list
  */
 data class ToDoItem(
-        @com.google.gson.annotations.SerializedName("text")
-        var text: String,
-
         @com.google.gson.annotations.SerializedName("id")
-        var id: String) {
+        var id: String,
+        @com.google.gson.annotations.SerializedName("text")
+        var text: String) {
 
     /**
      * Indicates if the item is completed

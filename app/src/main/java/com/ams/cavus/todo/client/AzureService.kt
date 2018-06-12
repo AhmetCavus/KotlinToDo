@@ -1,6 +1,8 @@
 package com.ams.cavus.todo.client
 
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
+import android.opengl.GLES30
 import com.ams.cavus.client.AzureApi
 import com.ams.cavus.todo.helper.Settings
 import com.ams.cavus.todo.list.model.ToDoItem
@@ -10,6 +12,7 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import com.microsoft.windowsazure.mobileservices.MobileServiceList
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceUser
 import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable
+import com.microsoft.windowsazure.mobileservices.table.sync.MobileServiceSyncTable
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.ColumnDataType
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.SQLiteLocalStore
 import com.microsoft.windowsazure.mobileservices.table.sync.synchandler.SimpleSyncHandler
@@ -31,7 +34,7 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
     val isLoggedIn: Boolean
         get() = client?.currentUser?.authenticationToken?.isNotEmpty() ?: false
 
-    private lateinit var todoTable: MobileServiceTable<ToDoItem>
+    private lateinit var todoTable: MobileServiceSyncTable<ToDoItem>
 
     init {
         if (client.currentUser != null) {
@@ -91,23 +94,24 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         }
     }
 
-    fun FetchTodos(syncCompleteListener: FetchListComplete)
+    fun fetchTodos(syncCompleteListener: FetchListComplete)
     {
         //Initialize & Sync
-        doAsync {
-            initialize()
-            val todoItems = todoTable.select().execute().get()
-            uiThread {
-                syncCompleteListener.invoke(todoItems)
+        syncTodos {
+            doAsync {
+                val todoItems = todoTable.read(null).get()
+                uiThread { syncCompleteListener.invoke(todoItems) }
             }
         }
     }
 
-    fun syncTodos()
+    fun syncTodos(callback: () -> Unit)
     {
         doAsync {
+            //pull down all latest changes and then push current coffees up
+            todoTable.pull(null, "TodoTable").get()
             client.syncContext.push().get()
-            print("Done!!!")
+            uiThread { callback() }
         }
     }
 
@@ -118,8 +122,7 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
             var todoItem = ToDoItem(text, currentCredentials.email)
 
             val res = todoTable.insert(todoItem).get()
-            syncTodos()
-            uiThread { listener.invoke(res) }
+            syncTodos { listener.invoke(res) }
         }
     }
 
@@ -145,10 +148,10 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         }
 
         //InitialzeDatabase for path
-        var path = "syncstore.db"
+        var path = "todotable.db"
 
         //setup our local sqlite store and intialize our table
-        var store = SQLiteLocalStore(client.context, "TodoStore", null, 1)
+        var store = SQLiteLocalStore(client.context, "OfflineDb", null, 1)
 
         val definition =
         mapOf(
@@ -158,13 +161,13 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         )
 
         //Define table
-        store.defineTable("TodoTable", definition)
+        store.defineTable("todoitem", definition)
 
         //Initialize SyncContext
         client.syncContext.initialize(store, SimpleSyncHandler()).get()
 
         //Get our sync table that will call out to azure
-        todoTable = client.getTable(ToDoItem::class.java)
+        todoTable = client.getSyncTable(ToDoItem::class.java)
     }
 
     private fun initCredentials() {

@@ -18,7 +18,7 @@ class TodoViewModel (private val app: Application) : AndroidViewModel(app), Life
 
     @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
     fun onCreate() {
-        azureService.FetchTodos {
+        azureService.fetchTodos {
             adapter.todoItems = it
             adapter.notifyDataSetChanged()
         }
