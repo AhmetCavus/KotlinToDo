@@ -98,7 +98,7 @@
                 tools:visibility="gone"
                 android:clickable="true"
                 app:visibleIf="@{vm.model.isSignInVisible}"
-                app:onClick="@{v -> vm.signIn(provider.Google)}"
+                app:onClick="@{v -> vm.signIn(provider.Twitter)}"
                 />
 
             <LinearLayout

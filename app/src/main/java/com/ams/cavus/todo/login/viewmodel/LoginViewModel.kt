@@ -15,6 +15,7 @@ import com.ams.cavus.todo.login.model.LoginDataModel
 import com.example.amstodo.util.SingleLiveEvent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.microsoft.windowsazure.mobileservices.MobileServiceActivityResult
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider
 import javax.inject.Inject
 
@@ -24,6 +25,7 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
         const val GOOGLE_CALLBACK = 101
         const val MICROSOFT_CALLBACK = 102
         const val AD_CALLBACK = 103
+        const val TWITTER_CALLBACK = 104
     }
 
     @Inject
@@ -88,6 +90,10 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
         }
     }
 
+    fun handleTwitterResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        TODO("Handle Twitter result")
+    }
+
     fun handleMicrosoftResult(requestCode: Int, resultCode: Int, data: Intent?) {
         TODO("Handle Microsoft result")
     }
@@ -96,16 +102,13 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
         TODO("Handle Active Directory result")
     }
 
-    fun signIn(provider: MobileServiceAuthenticationProvider): Unit = when(provider) {
-        MobileServiceAuthenticationProvider.MicrosoftAccount -> TODO()
-        MobileServiceAuthenticationProvider.Google -> {
-            currentCallbackId = GOOGLE_CALLBACK
-            startActivityForResultEvent.value = googleService.createSignInIntent()
-        }
-        MobileServiceAuthenticationProvider.Twitter -> TODO()
-        MobileServiceAuthenticationProvider.Facebook -> TODO()
-        MobileServiceAuthenticationProvider.WindowsAzureActiveDirectory -> TODO()
-        else -> TODO()
+    fun handleResult(requestCode: Int, resultCode: Int, data: Intent) {
+        val user = azureService.onActivityResult(data)
+        showTodoList()
+    }
+
+    fun signIn(provider: MobileServiceAuthenticationProvider) {
+        azureService.login(provider.name, currentCallbackId)
     }
 
     fun signOut() {

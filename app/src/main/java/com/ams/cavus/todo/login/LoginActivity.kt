@@ -59,12 +59,14 @@ class LoginActivity : AppCompatActivity(), LifecycleOwner {
         lifecycleRegistry.markState(Lifecycle.State.RESUMED)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
+            LoginViewModel.TWITTER_CALLBACK -> viewModel.handleTwitterResult(requestCode, resultCode, data)
             LoginViewModel.GOOGLE_CALLBACK -> viewModel.handleGoogleResult(requestCode, resultCode, data)
             LoginViewModel.MICROSOFT_CALLBACK -> viewModel.handleMicrosoftResult(requestCode, resultCode, data)
             LoginViewModel.AD_CALLBACK -> viewModel.handleAdResult(requestCode, resultCode, data)
+            else -> viewModel.handleResult(requestCode, resultCode, data)
         }
     }
 

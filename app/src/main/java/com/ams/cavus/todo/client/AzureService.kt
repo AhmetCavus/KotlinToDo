@@ -1,5 +1,7 @@
 package com.ams.cavus.todo.client
 
+import android.content.Intent
+import com.ams.cavus.client.AzureApi
 import com.ams.cavus.todo.list.model.ToDoItem
 import com.google.gson.Gson
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
@@ -60,6 +62,10 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         }
     }
 
+    fun login(provider: String, requestCode: Int) {
+        client.login(provider, AzureApi.URI_SCHEME, requestCode)
+    }
+
     fun logout(success: LogoutSuccess, fail: LogoutFail) {
         val logoutTask = client.logout()
         logoutTask.doAsyncResult {
@@ -67,6 +73,8 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
             uiThread { success.invoke(client.currentUser) }
         }
     }
+
+    fun onActivityResult(data: Intent) = client.onActivityResult(data)
 
     fun initialize() {
         //InitialzeDatabase for path
