@@ -64,13 +64,15 @@
 
         </LinearLayout>
 
-        <ListView
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout">
-
-
-        </ListView>
+            android:layout_marginBottom="8dp"
+            android:scrollbars="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout"
+            android:adapter="@{vm.adapter}" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
@@ -81,6 +83,7 @@
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:src="@drawable/ic_add"
+            android:onClick="@{v -> vm.onShowAddItemPopup()}"
             app:layout_constraintBottom_toBottomOf="@+id/main_layout"
             app:layout_constraintEnd_toEndOf="@+id/main_layout" />
 

@@ -5,6 +5,7 @@ import android.arch.lifecycle.LifecycleRegistry
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import com.ams.cavus.todo.R
 import com.ams.cavus.todo.databinding.ActivityTodoBinding
 import com.ams.cavus.todo.list.viewmodel.TodoViewModel
@@ -22,6 +23,8 @@ class TodoActivity : AppCompatActivity() {
 
     private lateinit var viewDataBinding: ActivityTodoBinding
 
+    private lateinit var linearLayoutManager: LinearLayoutManager
+
     @Inject
     lateinit var viewModel: TodoViewModel
 
@@ -30,6 +33,7 @@ class TodoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         // The layout for this activity is a Data Binding layout so it needs to be inflated using
         viewDataBinding = DataBindingUtil.setContentView(
                 this, R.layout.activity_todo)
@@ -42,7 +46,13 @@ class TodoActivity : AppCompatActivity() {
         viewDataBinding.vm = viewModel.apply {
             lifecycleRegistry.addObserver(this)
         }
+
         lifecycleRegistry.markState(Lifecycle.State.CREATED)
+
+        linearLayoutManager = LinearLayoutManager(this)
+        viewDataBinding?.recyclerView?.apply {
+            layoutManager = linearLayoutManager
+        }
     }
 
     override fun onStart() {

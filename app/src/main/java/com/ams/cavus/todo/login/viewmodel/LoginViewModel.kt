@@ -6,16 +6,14 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Intent
-import com.ams.cavus.todo.list.TodoActivity
 import com.ams.cavus.todo.client.AzureCredentials
 import com.ams.cavus.todo.client.AzureService
 import com.ams.cavus.todo.client.GoogleService
-import com.ams.cavus.todo.db.DbService
+import com.ams.cavus.todo.list.TodoActivity
 import com.ams.cavus.todo.login.model.LoginDataModel
 import com.example.amstodo.util.SingleLiveEvent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.microsoft.windowsazure.mobileservices.MobileServiceActivityResult
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceAuthenticationProvider
 import javax.inject.Inject
 
@@ -37,9 +35,6 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     @Inject
     lateinit var model: LoginDataModel
 
-    @Inject
-    lateinit var dbService: DbService
-
     var currentCallbackId = 0
 
     val startActivityForResultEvent = SingleLiveEvent<Intent>()
@@ -55,16 +50,9 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     }
 
     private fun relogin() {
-        dbService.fetchLastAccount(
-                { credentials ->
-                    azureService.login(
-                            credentials.toAzure(),
-                            ::onLoginSuccess,
-                            ::onLoginFail
-                    )
-                },
-                { exception ->  updateUI(exception)}
-        )
+        azureService.initialize()
+        if(!azureService.isLoggedIn) return
+        showTodoList()
     }
 
     fun handleGoogleResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -103,8 +91,12 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     }
 
     fun handleResult(requestCode: Int, resultCode: Int, data: Intent) {
-        val user = azureService.onActivityResult(data)
-        showTodoList()
+        val result = azureService.onActivityResult(data)
+        if(result.isLoggedIn) {
+            showTodoList()
+        } else {
+            updateUI(Exception(result.errorMessage))
+        }
     }
 
     fun signIn(provider: MobileServiceAuthenticationProvider) {

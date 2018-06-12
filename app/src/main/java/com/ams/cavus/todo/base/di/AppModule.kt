@@ -7,6 +7,7 @@ import com.ams.cavus.todo.base.App
 import com.ams.cavus.todo.client.AzureService
 import com.ams.cavus.todo.db.AppDb
 import com.ams.cavus.todo.db.DbService
+import com.ams.cavus.todo.helper.Settings
 import com.google.gson.Gson
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import com.squareup.okhttp.OkHttpClient
@@ -41,7 +42,7 @@ class AppModule(val app: App) {
 
     @Singleton
     @Provides
-    fun provideAzureService(client: MobileServiceClient, gson: Gson) : AzureService = AzureService(client, gson)
+    fun provideAzureService(client: MobileServiceClient, gson: Gson, settings: Settings) : AzureService = AzureService(client, gson, settings)
 
     @Singleton
     @Provides
@@ -59,9 +60,14 @@ class AppModule(val app: App) {
 
     @Singleton
     @Provides
+    fun providePreferences(app: App) = com.ams.cavus.todo.helper.Settings(app.baseContext)
+
+    @Singleton
+    @Provides
     fun provideGson() = Gson()
 
     @Named("azureScope")
     @Provides
     fun provideAzureScope(app: App): String = app.getString(R.string.azure_scope)
+
 }

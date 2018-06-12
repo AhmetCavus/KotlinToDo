@@ -1,12 +1,16 @@
 package com.ams.cavus.todo.client
 
+import android.bluetooth.BluetoothClass
 import android.content.Intent
 import com.ams.cavus.client.AzureApi
+import com.ams.cavus.todo.helper.Settings
 import com.ams.cavus.todo.list.model.ToDoItem
 import com.google.gson.Gson
+import com.microsoft.windowsazure.mobileservices.MobileServiceActivityResult
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
+import com.microsoft.windowsazure.mobileservices.MobileServiceList
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceUser
-import com.microsoft.windowsazure.mobileservices.table.sync.MobileServiceSyncTable
+import com.microsoft.windowsazure.mobileservices.table.MobileServiceTable
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.ColumnDataType
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.SQLiteLocalStore
 import com.microsoft.windowsazure.mobileservices.table.sync.synchandler.SimpleSyncHandler
@@ -18,11 +22,23 @@ typealias AuthSuccess = (AzureCredentials) -> Unit
 typealias AuthFail = (Exception) -> Unit
 typealias LogoutSuccess = (MobileServiceUser) -> Unit
 typealias LogoutFail = (Exception) -> Unit
+typealias FetchListComplete = (MobileServiceList<ToDoItem>) -> Unit
+typealias AddItemComplete = (ToDoItem) -> Unit
 
-class AzureService(private val client: MobileServiceClient, private val gson: Gson) {
+class AzureService(private val client: MobileServiceClient, private val gson: Gson, private var settings: Settings) {
 
-    lateinit var currentCredentials: AzureCredentials
-    lateinit var todoTable: MobileServiceSyncTable<ToDoItem>
+    var currentCredentials = emptyCredentials()
+
+    val isLoggedIn: Boolean
+        get() = client?.currentUser?.authenticationToken?.isNotEmpty() ?: false
+
+    private lateinit var todoTable: MobileServiceTable<ToDoItem>
+
+    init {
+        if (client.currentUser != null) {
+            initCredentials()
+        }
+    }
 
     fun login(credentials: AzureCredentials, success: AuthSuccess, fail: AuthFail) {
         doAsync {
@@ -33,11 +49,12 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
                 val authTask = client.login(credentials.provider, oauthToken)
                 // Signed in successfully, show authenticated UI.
                 authTask.doAsyncResult {
-                    currentCredentials = credentials
                     if (!authTask.isDone) return@doAsyncResult
                     authTask.get().apply {
-                        credentials.authToken = this.authenticationToken
-                        credentials.userId = this.userId
+                        credentials.authToken = authenticationToken
+                        credentials.userId = userId
+                        currentCredentials = credentials
+                        settings.saveCredentials(credentials.authToken, credentials.userId)
                     }
                     uiThread { success.invoke(credentials) }
                 }
@@ -52,10 +69,11 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
             // Signed in successfully, show authenticated UI.
             authTask.doAsyncResult {
 //                if (!authTask.isDone) return@doAsyncResult
-                currentCredentials = credentials
                 authTask.get().apply {
-                    credentials.authToken = this.authenticationToken
-                    credentials.userId = this.userId
+                    credentials.authToken = authenticationToken
+                    credentials.userId = userId
+                    currentCredentials = credentials
+                    settings.saveCredentials(credentials.authToken, credentials.userId)
                 }
                 uiThread { success.invoke(credentials) }
             }
@@ -74,12 +92,61 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         }
     }
 
-    fun onActivityResult(data: Intent) = client.onActivityResult(data)
+    fun FetchTodos(syncCompleteListener: FetchListComplete)
+    {
+        //Initialize & Sync
+        doAsync {
+            initialize()
+            val todoItems = todoTable.select().execute().get()
+            uiThread {
+                syncCompleteListener.invoke(todoItems)
+            }
+        }
+    }
+
+    fun syncTodos()
+    {
+        doAsync {
+            client.syncContext.push().get()
+            print("Done!!!")
+        }
+    }
+
+    fun addTodo(text: String, listener: AddItemComplete)
+    {
+        doAsync {
+            initialize()
+            var todoItem = ToDoItem(text, currentCredentials.email)
+
+            val res = todoTable.insert(todoItem).get()
+            syncTodos()
+            uiThread { listener.invoke(res) }
+        }
+    }
+
+    fun onActivityResult(data: Intent): MobileServiceActivityResult {
+        return client.onActivityResult(data).apply {
+            if(isLoggedIn) {
+                settings.saveCredentials(
+                        client.currentUser?.authenticationToken ?: "",
+                        client.currentUser.userId ?: "")
+                initCredentials()
+                initialize()
+            }
+        }
+    }
 
     fun initialize() {
+        if(client?.syncContext?.isInitialized == true) return
+        if(!settings?.isCredentials) return
+
+        client.apply {
+            currentUser = MobileServiceUser(settings.credentials.userId)
+            currentUser.authenticationToken = settings.credentials.authToken
+        }
+
         //InitialzeDatabase for path
-        var path = "syncstore.db";
-//        path = Path.Combine(MobileServiceClient.DefaultDatabasePath, path);
+        var path = "syncstore.db"
 
         //setup our local sqlite store and intialize our table
         var store = SQLiteLocalStore(client.context, "TodoStore", null, 1)
@@ -98,7 +165,14 @@ class AzureService(private val client: MobileServiceClient, private val gson: Gs
         client.syncContext.initialize(store, SimpleSyncHandler()).get()
 
         //Get our sync table that will call out to azure
-        todoTable = client.getSyncTable(ToDoItem::class.java)
+        todoTable = client.getTable(ToDoItem::class.java)
+    }
+
+    private fun initCredentials() {
+        currentCredentials = emptyCredentials().apply {
+            authToken = client.currentUser.authenticationToken
+            userId = client.currentUser.userId
+        }
     }
 
 }
