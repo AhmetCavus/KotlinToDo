@@ -6,11 +6,11 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Intent
-import com.ams.cavus.todo.client.AzureCredentials
-import com.ams.cavus.todo.client.AzureService
 import com.ams.cavus.todo.client.GoogleService
 import com.ams.cavus.todo.list.TodoActivity
+import com.ams.cavus.todo.list.service.IdentityService
 import com.ams.cavus.todo.login.model.LoginDataModel
+import com.ams.cavus.todo.login.service.AzureAuthService
 import com.example.amstodo.util.SingleLiveEvent
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -27,7 +27,10 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     }
 
     @Inject
-    lateinit var azureService: AzureService
+    lateinit var authService: AzureAuthService
+
+    @Inject
+    lateinit var identityService: IdentityService
 
     @Inject
     lateinit var googleService: GoogleService
@@ -50,8 +53,9 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     }
 
     private fun relogin() {
-        azureService.initialize()
-        if(!azureService.isLoggedIn) return
+        authService.initialize()
+        if(!authService.isLoggedIn) return
+        if(!authService.hasIdentifier) return
         showTodoList()
     }
 
@@ -64,10 +68,10 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
             val account = completedTask.getResult(ApiException::class.java)
             googleService.loadCredentials(app, account) {
                 credentials ->
-                    azureService.login(
+                    authService.login(
                             "Google",
                             credentials,
-                            { user -> showTodoList()},
+                            { _ -> showTodoList()},
                             { exception -> updateUI(exception)}
                     )
             }
@@ -91,21 +95,23 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     }
 
     fun handleResult(requestCode: Int, resultCode: Int, data: Intent) {
-        val result = azureService.onActivityResult(data)
+        val result = authService.onActivityResult(data)
         if(result.isLoggedIn) {
-            showTodoList()
+            identityService.fetch { userList ->
+                showEditUsername()
+            }
         } else {
             updateUI(Exception(result.errorMessage))
         }
     }
 
     fun signIn(provider: MobileServiceAuthenticationProvider) {
-        azureService.login(provider.name, currentCallbackId)
+        authService.login(provider.name, currentCallbackId)
     }
 
     fun signOut() {
-        azureService.logout(
-            { loggedOutUser -> showTodoList()},
+        authService.logout(
+            { _ -> showTodoList()},
             { exception -> updateUI(exception) }
         )
     }
@@ -115,11 +121,23 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
         startActivityEvent.value = todoListIntent
     }
 
+    private fun showEditUsername() {
+        model.isSignInVisible = false
+    }
+
     private fun updateUI(error: Exception?) {
         model.statusText = error?.message ?: ""
     }
 
-    private fun onLoginSuccess(credentials: AzureCredentials?) = showTodoList()
-    private fun onLoginFail(exception: Exception?) = updateUI(exception)
+    fun onNext() {
+        if(identityService.checkUsernameIsValid(model.username, authService.currentCredentials.userId)) {
+            identityService.add(authService.currentCredentials.userId, model.username) { identity ->
+                authService.currentCredentials.userName = identity.userName
+                showTodoList()
+            }
+        } else {
+            model.statusText = "Benutzername existiert bereits!"
+        }
+    }
 
 }

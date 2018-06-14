@@ -14,7 +14,7 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import javax.inject.Inject
 
 /**
- * Activity to demonstrate basic retrieval of the Google user's ID, email address, and basic
+ * Activity to demonstrate basic retrieval of the Google user's ID, userName address, and basic
  * profile.
  */
 class TodoActivity : AppCompatActivity() {
@@ -50,7 +50,7 @@ class TodoActivity : AppCompatActivity() {
         lifecycleRegistry.markState(Lifecycle.State.CREATED)
 
         linearLayoutManager = LinearLayoutManager(this)
-        viewDataBinding?.recyclerView?.apply {
+        viewDataBinding.recyclerView.apply {
             layoutManager = linearLayoutManager
         }
     }

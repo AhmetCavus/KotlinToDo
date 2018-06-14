@@ -16,7 +16,7 @@ import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import javax.inject.Inject
 
 /**
- * A login screen that offers login via email/password.
+ * A login screen that offers login via userName/password.
  */
 class LoginActivity : AppCompatActivity(), LifecycleOwner {
 

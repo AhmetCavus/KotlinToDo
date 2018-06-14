@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.ams.cavus.todo.R
 import com.ams.cavus.todo.databinding.ListitemTodoBinding
-import com.ams.cavus.todo.list.model.ToDoItem
+import com.ams.cavus.todo.list.model.Todo
 import com.ams.cavus.todo.list.viewmodel.TodoItemViewModel
 
 
@@ -14,7 +14,7 @@ class TodoListAdapter: RecyclerView.Adapter<TodoListAdapter.TodoItemHolder>() {
 
     lateinit var viewDataBinding: ListitemTodoBinding
 
-    var todoItems = mutableListOf<ToDoItem>()
+    var todoItems = mutableListOf<Todo>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TodoItemHolder {
         viewDataBinding = DataBindingUtil.inflate(

@@ -49,7 +49,7 @@
                 android:id="@+id/status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@{vm.azureService.currentCredentials.email}"
+                android:text="@{vm.authService.currentCredentials.userName}"
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
 

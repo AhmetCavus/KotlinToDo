@@ -3,9 +3,9 @@ package com.ams.cavus.todo.list.viewmodel
 import android.databinding.BaseObservable
 import android.databinding.Bindable
 import com.ams.cavus.todo.BR
-import com.ams.cavus.todo.list.model.ToDoItem
+import com.ams.cavus.todo.list.model.Todo
 
-class TodoItemViewModel(private val toDoItem: ToDoItem) : BaseObservable(){
+class TodoItemViewModel(private val toDoItem: Todo) : BaseObservable(){
 
     var id: String = toDoItem.id
         @Bindable get
@@ -23,11 +23,11 @@ class TodoItemViewModel(private val toDoItem: ToDoItem) : BaseObservable(){
             notifyPropertyChanged(BR.text)
         }
 
-    var completed: Boolean = toDoItem.isComplete
+    var completed: Boolean = toDoItem.completed
         @Bindable get
         set(value) {
             field = value
-            toDoItem.isComplete = value
+            toDoItem.completed = value
             notifyPropertyChanged(BR.completed)
         }
 

@@ -16,7 +16,7 @@
 
     </data>
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
         android:id="@+id/main_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -26,9 +26,9 @@
         tools:context=".login.login.LoginActivity">
 
         <LinearLayout
+            android:id="@+id/linearLayout3"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="3"
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
@@ -46,8 +46,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                android:text="@string/title_text"
                 android:gravity="center"
+                android:text="@string/title_text"
                 android:textColor="@android:color/white"
                 android:textSize="36sp" />
 
@@ -59,73 +59,59 @@
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/detail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fadeScrollbars="true"
-                android:gravity="center"
-                android:maxLines="5"
-                android:padding="10dp"
-                android:scrollbars="vertical"
-                android:textColor="@android:color/white"
-
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/button_optional_action"
-                style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                tools:text="Optional Action"
-                tools:visibility="visible" />
-
         </LinearLayout>
 
-
         <RelativeLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="8dp"
             android:layout_weight="1"
-            android:background="@color/blue_grey_900">
+            android:background="@color/blue_grey_900"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/linearLayout3">
 
             <com.google.android.gms.common.SignInButton
                 android:id="@+id/sign_in_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                tools:visibility="gone"
                 android:clickable="true"
-                app:visibleIf="@{vm.model.isSignInVisible}"
                 app:onClick="@{v -> vm.signIn(provider.Twitter)}"
-                />
+                app:visibleIf="@{vm.model.isSignInVisible}"
+                tools:visibility="visible" />
 
-            <LinearLayout
-                android:id="@+id/sign_out_and_disconnect"
-                android:layout_width="fill_parent"
+            <EditText
+                android:id="@+id/usernameEt"
+                style="@android:style/Widget.Holo.EditText"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:orientation="horizontal"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                app:visibleIf="@{vm.model.isSignOutVisible}"
-                tools:visibility="visible">
+                android:layout_margin="21dp"
+                android:layout_marginBottom="3dp"
+                android:text="@={vm.model.username}"
+                android:hint="Enter username"
+                android:textColorHint="@android:color/white"
+                android:singleLine="true"
+                app:visibleIf="@{!vm.model.isSignInVisible}"
+                android:textColor="@android:color/white" />
 
-                <Button
-                    android:id="@+id/sign_out_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/sign_out"
-                    android:theme="@style/ThemeOverlay.MyDarkButton"
-                    android:onClick="@{v -> vm.signOut()}"
-                    />
-
-            </LinearLayout>
+            <Button
+                android:id="@+id/nextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/usernameEt"
+                android:layout_marginLeft="21dp"
+                android:layout_marginRight="21dp"
+                android:elevation="0dp"
+                android:text="Next"
+                android:onClick="@{v -> vm.onNext()}"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textColor="@color/browser_actions_bg_grey"
+                app:visibleIf="@{!vm.model.isSignInVisible}"
+                android:theme="@style/Base.Widget.AppCompat.ActionButton" />
 
         </RelativeLayout>
 
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
 </layout>

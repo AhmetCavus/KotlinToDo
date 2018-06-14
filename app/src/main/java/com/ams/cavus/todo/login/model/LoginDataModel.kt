@@ -6,8 +6,16 @@ import com.ams.cavus.todo.BR
 
 data class LoginDataModel(private val id: Int = 0) : BaseObservable() {
 
-    var username: String = ""
+    var username = ""
         @Bindable get
+        set(value) {
+            field = value
+            notifyPropertyChanged(BR.username)
+        }
+
+    var usernameValid = false
+        @Bindable get() = username.isNotEmpty() && username.length > 2
+
 
     var password: String = ""
         @Bindable get

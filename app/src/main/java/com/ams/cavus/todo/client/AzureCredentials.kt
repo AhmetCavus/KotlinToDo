@@ -1,8 +1,9 @@
 package com.ams.cavus.todo.client
 
-data class AzureCredentials(var access_token: String, var id_token: String, var email: String, var provider: String) {
-    lateinit var authToken: String
-    lateinit var userId: String
+data class AzureCredentials(var access_token: String, var id_token: String, var provider: String) {
+    var authToken = ""
+    var userId = ""
+    var userName = ""
 }
 
-fun emptyCredentials() = AzureCredentials("", "", "", "")
+fun emptyCredentials() = AzureCredentials("", "", "")

@@ -22,7 +22,7 @@ fun setVisibility(view: View, visible: Boolean) {
 fun setListener(cb: CheckBox, listener: InverseBindingListener) {
     if (listener != null) {
         cb.setOnCheckedChangeListener {
-            buttonView, isChecked ->
+            _, isChecked ->
                 listener.onChange()
         }
     }

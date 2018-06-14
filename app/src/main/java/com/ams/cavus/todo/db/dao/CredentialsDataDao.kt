@@ -12,8 +12,8 @@ interface CredentialsDataDao {
     @Query("SELECT * from CredentialsData")
     fun getAll(): List<CredentialsData>?
 
-    @Query("SELECT * from CredentialsData where email = :email")
-    fun selectAccount(email: String): CredentialsData?
+    @Query("SELECT * from CredentialsData where userName = :userName")
+    fun selectAccount(userName: String): CredentialsData?
 
     @Query("SELECT * from CredentialsData limit 1")
     fun selectLastAccount(): CredentialsData?

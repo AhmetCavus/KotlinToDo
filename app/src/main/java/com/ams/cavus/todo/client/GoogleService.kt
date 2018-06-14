@@ -15,9 +15,9 @@ class GoogleService(private val client: GoogleSignInClient, private val gson: Gs
 
     fun loadCredentials(app: Application, account: GoogleSignInAccount, completed: GetCredentialsCompleted) {
         doAsync {
-            val accessToken = GoogleAuthUtil.getToken(app.applicationContext, account?.account, app.getString(R.string.azure_scope))
-            val credentials = AzureCredentials(accessToken, account?.idToken ?: "", provider = "Google", email = account?.email ?: "")
-            completed?.invoke(credentials)
+            val accessToken = GoogleAuthUtil.getToken(app.applicationContext, account.account, app.getString(R.string.azure_scope))
+            val credentials = AzureCredentials(accessToken, account.idToken ?: "", provider = "Google")
+            completed.invoke(credentials)
         }
     }
 
