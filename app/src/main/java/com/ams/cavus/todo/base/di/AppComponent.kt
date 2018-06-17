@@ -3,7 +3,6 @@ package com.ams.cavus.todo.base.di
 import com.ams.cavus.todo.base.App
 import com.ams.cavus.todo.list.TodoActivity
 import com.ams.cavus.todo.list.di.TodoModule
-import com.ams.cavus.todo.list.di.TodoModule_ProvideTodoViewModelFactory
 import com.ams.cavus.todo.list.viewmodel.TodoViewModel
 import com.ams.cavus.todo.login.LoginActivity
 import com.ams.cavus.todo.login.di.LoginModule

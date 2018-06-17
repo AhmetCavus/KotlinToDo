@@ -4,12 +4,18 @@ import com.ams.cavus.todo.helper.Settings
 import com.google.gson.Gson
 import com.microsoft.windowsazure.mobileservices.MobileServiceClient
 import com.microsoft.windowsazure.mobileservices.authentication.MobileServiceUser
+import com.microsoft.windowsazure.mobileservices.table.query.Query
 import com.microsoft.windowsazure.mobileservices.table.sync.MobileServiceSyncTable
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.ColumnDataType
 import com.microsoft.windowsazure.mobileservices.table.sync.localstore.SQLiteLocalStore
 import com.microsoft.windowsazure.mobileservices.table.sync.synchandler.SimpleSyncHandler
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import com.microsoft.windowsazure.mobileservices.table.query.QueryOperations
+
+
+
+typealias SyncCompleteListener<TEntity> = (MutableList<TEntity>) -> Unit
 
 abstract class AzureEntityService<TEntity>(protected val client: MobileServiceClient, protected val gson: Gson, protected var settings: Settings) {
 
@@ -17,12 +23,12 @@ abstract class AzureEntityService<TEntity>(protected val client: MobileServiceCl
 
     protected lateinit var table: MobileServiceSyncTable<TEntity>
 
-    fun fetch(syncCompleteListener: (MutableList<TEntity>) -> Unit)
+    fun fetch(query: Query?, syncCompleteListener: SyncCompleteListener<TEntity>)
     {
         //Initialize & Sync
         sync {
             doAsync {
-                itemsCache = table.read(null).get()
+                itemsCache = table.read(query).get()
                 uiThread { syncCompleteListener.invoke(itemsCache) }
             }
         }
