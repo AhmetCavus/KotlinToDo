@@ -65,4 +65,14 @@ class TodoActivity : AppCompatActivity() {
         lifecycleRegistry.markState(Lifecycle.State.RESUMED)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        lifecycleRegistry.markState(Lifecycle.State.DESTROYED)
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        viewModel.onBackPressed()
+    }
+
 }

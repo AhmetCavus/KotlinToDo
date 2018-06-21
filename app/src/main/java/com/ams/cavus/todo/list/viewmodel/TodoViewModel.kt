@@ -35,4 +35,10 @@ class TodoViewModel (app: Application) : AndroidViewModel(app), LifecycleObserve
         adapter.notifyDataSetChanged()
     }
 
+    fun onBackPressed() {
+        todoService.pushCache {
+            print("Sync completed")
+        }
+    }
+
 }

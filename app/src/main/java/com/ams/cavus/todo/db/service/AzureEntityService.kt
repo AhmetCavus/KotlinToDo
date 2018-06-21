@@ -11,9 +11,6 @@ import com.microsoft.windowsazure.mobileservices.table.sync.localstore.SQLiteLoc
 import com.microsoft.windowsazure.mobileservices.table.sync.synchandler.SimpleSyncHandler
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
-import com.microsoft.windowsazure.mobileservices.table.query.QueryOperations
-
-
 
 typealias SyncCompleteListener<TEntity> = (MutableList<TEntity>) -> Unit
 

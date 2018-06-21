@@ -10,6 +10,7 @@ import com.microsoft.windowsazure.mobileservices.table.sync.localstore.ColumnDat
 import org.jetbrains.anko.doAsync
 
 typealias AddTodoComplete = (Todo) -> Unit
+typealias PushComplete = () -> Unit
 
 class TodoService(client: MobileServiceClient, gson: Gson, settings: Settings) : AzureEntityService<Todo>(client, gson, settings) {
 
@@ -36,9 +37,17 @@ class TodoService(client: MobileServiceClient, gson: Gson, settings: Settings) :
         doAsync {
             initialize()
             var entity = Todo(userId, text)
-
             val res = table.insert(entity).get()
             sync { listener.invoke(res) }
+        }
+    }
+
+    fun pushCache(listener: PushComplete)
+    {
+        doAsync {
+            initialize()
+            itemsCache.forEach { entity -> table.insert(entity).get() }
+            sync { listener.invoke() }
         }
     }
 }

@@ -7,6 +7,7 @@ import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.content.Intent
 import com.ams.cavus.todo.client.GoogleService
+import com.ams.cavus.todo.helper.QueryBuilder
 import com.ams.cavus.todo.list.TodoActivity
 import com.ams.cavus.todo.list.service.IdentityService
 import com.ams.cavus.todo.login.model.LoginDataModel
@@ -97,7 +98,8 @@ class LoginViewModel (private val app: Application) : AndroidViewModel(app), Lif
     fun handleResult(requestCode: Int, resultCode: Int, data: Intent) {
         val result = authService.onActivityResult(data)
         if(result.isLoggedIn) {
-            identityService.fetch { userList ->
+            identityService.fetch(QueryBuilder.buildFetch(authService.currentCredentials.userId))
+            { userList ->
                 showEditUsername()
             }
         } else {
